@@ -1,4 +1,4 @@
-export type WalletType = 'MetaMask' | 'Phantom' | 'Rabby' | 'TronLink' | 'Bitget' | 'Coinbase' | 'Solflare' | 'Mac';
+export type WalletType = 'MetaMask' | 'Phantom' | 'Rabby' | 'TronLink' | 'Bitget' | 'Coinbase' | 'Solflare' | 'OKX' | 'Mac';
 export interface WalletConnectModalProps {
     onWalletSelect?: (wallet: WalletType) => void;
     onClose?: () => void;

@@ -27,6 +27,7 @@ export declare const WALLET_TYPE_SHORTKEY: {
     readonly BITGET: "BG";
     readonly COINBASE: "CB";
     readonly SOLFLARE: "SF";
+    readonly OKX: "OKX";
     readonly MAC: "MAC";
 };
 //# sourceMappingURL=config.d.ts.map

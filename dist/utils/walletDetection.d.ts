@@ -35,6 +35,10 @@ export declare const isCoinbaseWalletInstalled: () => boolean;
  */
 export declare const isSolflareInstalled: () => boolean;
 /**
+ * Check if OKX Wallet is installed
+ */
+export declare const isOKXInstalled: () => boolean;
+/**
  * Check if a specific wallet is installed
  */
 export declare const checkWalletInstalled: (wallet: string) => WalletDetectionResult;

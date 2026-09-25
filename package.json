@@ -18,6 +18,7 @@
     "./dist/wallets/bitget/styles.css": "./dist/wallets/bitget/styles.css",
     "./dist/wallets/coinbase/styles.css": "./dist/wallets/coinbase/styles.css",
     "./dist/wallets/solflare/styles.css": "./dist/wallets/solflare/styles.css",
+    "./dist/wallets/okx/styles.css": "./dist/wallets/okx/styles.css",
     "./dist/wallets/mac/styles.css": "./dist/wallets/mac/styles.css",
     "./package.json": "./package.json"
   },

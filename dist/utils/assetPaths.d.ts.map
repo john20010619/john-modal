@@ -1,1 +1,1 @@
-{"version":3,"file":"assetPaths.d.ts","sourceRoot":"","sources":["../../src/utils/assetPaths.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;AAGH,eAAO,MAAM,WAAW;;;;;;;;;;;;;;;;;CAsBd,CAAC"}
+{"version":3,"file":"assetPaths.d.ts","sourceRoot":"","sources":["../../src/utils/assetPaths.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;AAGH,eAAO,MAAM,WAAW;;;;;;;;;;;;;;;;;;;;CAyBd,CAAC"}
